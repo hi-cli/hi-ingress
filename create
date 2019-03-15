@@ -40,7 +40,7 @@ function run() {
             exit 1
         fi
     fi
-    
+    log_debug "app: ${app}" 
     ns=$(kubectl get svc ${app} -o 'jsonpath={.metadata.namespace}')
     port=$(kubectl get svc ${app} -o 'jsonpath={.spec.ports[0].port}')
     
@@ -54,9 +54,13 @@ function run() {
         domain="${INGRESS_DOMAIN}"
     fi
     
-    if [ "${domain}" == "" ]; then
+    if [ "${domain}" == "" ] && [ "${host}" == "" ]; then
         log_warn "You should set your own domain, e.g. export INGRESS_DOMAIN=your.company.com"
         domain="example.com"
+    fi
+
+    if [ "${host}" == "" ]; then
+      host=${app}-${ns}.${domain}
     fi
     
   kubectl apply -f - <<_EOF_
@@ -66,7 +70,7 @@ metadata:
   name: ${app}
 spec:
   rules:
-  - host: ${app}-${ns}.${domain}
+  - host: ${host} 
     http:
       paths:
       - path: /
